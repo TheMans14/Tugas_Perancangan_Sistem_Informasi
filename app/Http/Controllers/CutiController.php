@@ -16,10 +16,11 @@ class CutiController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'tanggal_mulai' => 'required|date',
-            'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
-            'alasan' => 'required|string',
+            'tanggal_mulai' => ['required', 'date', 'after_or_equal:today'],
+            'tanggal_selesai' => ['required', 'date', 'after_or_equal:tanggal_mulai'],
+            'alasan' => 'required|string|max:255',
         ]);
+
 
         Cuti::create([
             'user_id' => Auth::id(),

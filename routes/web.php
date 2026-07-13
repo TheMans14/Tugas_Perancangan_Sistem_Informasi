@@ -5,6 +5,7 @@ use App\Http\Controllers\UsersController;
 use App\Http\Controllers\PresentsController;
 use App\Http\Controllers\CutiController;
 use App\Http\Controllers\AdminCutiController;
+use App\Http\Controllers\LemburController;
 
 
 Route::get('/', function () {
@@ -70,3 +71,6 @@ Route::group(['roles' => 'Admin'], function () {
 
 Route::post('/users/import-jabatan', [UsersController::class, 'importJabatan'])->name('users.importJabatan');
 });
+
+Route::get('/lembur', [LemburController::class, 'create'])->name('lembur.create');
+Route::post('/lembur', [LemburController::class, 'store'])->name('lembur.store');

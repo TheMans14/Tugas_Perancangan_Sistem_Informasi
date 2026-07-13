@@ -145,7 +145,7 @@ Detail User - {{ config('app.name') }}
                     <h5 class="m-0 pt-1 font-weight-bold float-left">Kehadiran</h5>
                     @if ($libur == false)
                     @if (date('l') != 'Saturday' && date('l') != 'Sunday')
-                    <button title="Tambah Kehadiran" type="button" class="btn btn-sm btn-primary float-right" data-toggle="modal" data-target="#kehadiran">
+                    <button title="Konfirmasi Kehadiran" type="button" class="btn btn-sm btn-primary float-right" data-toggle="modal" data-target="#kehadiran">
                         <i class="fas fa-plus"></i>
                     </button>
                     @endif
@@ -237,7 +237,7 @@ Detail User - {{ config('app.name') }}
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="kehadiranLabel">Tambah Kehadiran</h5>
+                <h5 class="modal-title" id="kehadiranLabel">Konfirmasi Kehadiran</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>

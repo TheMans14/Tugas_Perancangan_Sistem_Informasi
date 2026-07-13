@@ -120,7 +120,7 @@
 
 
 
-                    @if (Request::segment(1) == 'users')
+                        @if (Request::segment(1) == 'users')
                     <li class="nav-item active">
                         <a class="nav-link active" href="{{ route('users.index') }}">
                             @else
@@ -143,6 +143,18 @@
                     </li>
                     @endif
 
+                    @if (Request::segment(1) == 'lembur')
+                    <li class="nav-item active">
+                        <a class="nav-link active" href="{{ route('lembur.create') }}">
+                            @else
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('lembur.create') }}">
+                            @endif
+                            <i class="fas fa-business-time text-primary"></i>
+                            <span>Lembur</span>
+                        </a>
+                    </li>
+                    
                     {{-- === AJUKAN CUTI === --}}
                     @if (Request::segment(1) == 'cuti')
                     <li class="nav-item active">

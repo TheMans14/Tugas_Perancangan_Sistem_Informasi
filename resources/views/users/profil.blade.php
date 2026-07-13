@@ -15,8 +15,8 @@ Profil - {{ config('app.name') }}
                     @method('patch')
                     @csrf
                     <div class="text-center mb-3">
-                        <img src="{{ asset('storage/' . Auth::user()->foto) }}" class="img-thumbnail" width="150">
-
+                        <img src="{{ Auth::user()->foto ? asset('storage/' . Auth::user()->foto) : 'https://via.placeholder.com/150' }}"
+                            class="img-thumbnail" width="150" id="image">
                     </div>
                     <div class="form-group row">
                         <div class="col-sm-2"><label for="foto" class="col-form-label">Foto</label></div>

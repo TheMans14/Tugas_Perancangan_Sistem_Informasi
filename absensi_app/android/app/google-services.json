@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "473541374434",
+    "project_id": "absensi-euphorbia",
+    "storage_bucket": "absensi-euphorbia.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:473541374434:android:b9528f31bca65253d049bb",
+        "android_client_info": {
+          "package_name": "com.example.absensi_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyASmlhoRcyLk6JqI_HDEClYN59-3vCK_ao"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

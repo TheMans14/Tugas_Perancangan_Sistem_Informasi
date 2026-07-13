@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\UsersJabatanImport;
 
@@ -147,15 +148,18 @@ class UsersController extends Controller
             'foto'  => ['image', 'mimes:jpeg,png,gif', 'max:2048'],
             'jabatan' => ['nullable', 'max:64'],
         ]);
+
         $data['role_id'] = $request->role;
         $data['jabatan'] = $request->jabatan;
+
         if ($request->file('foto')) {
             if ($user->foto != 'default.jpg') {
-                File::delete(public_path('storage' . '/' . $user->foto));
+                Storage::disk('public')->delete($user->foto);
             }
-            $data['foto'] = $request->file('foto')->store('foto-profil');
-            $data['jabatan'] = $request->jabatan;
+            // PERBAIKAN DI SINI - tambahkan 'public' sebagai parameter kedua
+            $data['foto'] = $request->file('foto')->store('foto-profil', 'public');
         }
+
         $user->update($data);
         return redirect()->back()->with('success', 'User berhasil diperbarui');
     }
@@ -245,7 +249,6 @@ class UsersController extends Controller
     {
         $request->validate([
             'nama' => ['required', 'max:32'],
-            'foto' => ['image', 'mimes:jpeg,png,gif', 'max:2048'],
             'foto' => ['image', 'mimes:jpeg,png,gif', 'max:2048']
         ]);
         $user->nama = $request->nama;

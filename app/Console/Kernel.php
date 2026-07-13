@@ -24,8 +24,11 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        // $schedule->command('inspire')
-        //          ->hourly();
+        $jamMasukReminder = \Carbon\Carbon::parse(config('absensi.jam_masuk'))->subHour()->format('H:i');
+        $jamPulang        = \Carbon\Carbon::parse(config('absensi.jam_pulang'))->format('H:i');
+
+        $schedule->command('attendance:remind masuk')->dailyAt($jamMasukReminder);
+        $schedule->command('attendance:remind pulang')->dailyAt($jamPulang);
     }
 
     /**
