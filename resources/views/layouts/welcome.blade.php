@@ -75,7 +75,9 @@
                         </li>
                     @endif
                     <li class="nav-item">
-                        @if (auth()->user()->role->role == "Admin")
+                        @if (auth()->user()->hasRole('Manager'))
+                            <a class="nav-link nav-link-icon" href="{{ route('manager.rekap') }}">
+                        @elseif (auth()->user()->role->role == "Admin")
                             <a class="nav-link nav-link-icon" href="{{ route('kehadiran.index') }}">
                         @else
                             <a class="nav-link nav-link-icon" href="{{ route('daftar-hadir') }}">
@@ -91,6 +93,8 @@
                             <span class="nav-link-inner--text">Profile</span>
                         </a>
                     </li>
+
+                    <li class="nav-item"><a class="nav-link nav-link-icon" href="{{ auth()->user()->hasRole('Manager') ? route('manager.perjalanan-dinas.index') : route('perjalanan-dinas.index') }}"><i class="ni ni-world"></i><span class="nav-link-inner--text">Perjalanan Dinas</span></a></li>
 
                     <li class="nav-item">
                         <a class="nav-link nav-link-icon" href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">

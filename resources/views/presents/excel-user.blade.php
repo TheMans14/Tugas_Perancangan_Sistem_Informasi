@@ -38,13 +38,7 @@
             {{-- Total Jam --}}
             <td>
                 @if ($present->jam_masuk && $present->jam_keluar)
-                @if (strtotime($present->jam_keluar) <= strtotime($present->jam_masuk))
-                    {{ 21 - (\Carbon\Carbon::parse($present->jam_masuk)->diffInHours(\Carbon\Carbon::parse($present->jam_keluar))) }}
-                    @elseif (strtotime($present->jam_keluar) >= strtotime(config('absensi.jam_pulang') . ' +2 hours'))
-                    {{ (\Carbon\Carbon::parse($present->jam_masuk)->diffInHours(\Carbon\Carbon::parse($present->jam_keluar))) - 3 }}
-                    @else
-                    {{ (\Carbon\Carbon::parse($present->jam_masuk)->diffInHours(\Carbon\Carbon::parse($present->jam_keluar))) - 1 }}
-                    @endif
+                    {{ \App\Support\AttendanceShift::workedMinutes($present->jam_masuk, $present->jam_keluar) / 60 }}
                     @else
                     -
                     @endif

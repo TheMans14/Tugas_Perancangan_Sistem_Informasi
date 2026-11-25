@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Present;
+use App\Support\AttendanceShift;
 use Illuminate\Http\Request;
 
 class ApiPresentController extends Controller
@@ -44,20 +45,26 @@ class ApiPresentController extends Controller
     // Check-in
     public function checkIn(Request $request)
     {
+        abort_if(auth()->user()->hasRole('Manager'), 403, 'Manager tidak perlu melakukan absensi.');
         $request->validate([
             'latitude'  => 'required|numeric',
             'longitude' => 'required|numeric',
         ]);
 
         $userId  = auth()->user()->id;
-        $tanggal = date('Y-m-d');
-        $jam     = date('H:i:s');
+        $now = now();
+        $tanggal = AttendanceShift::date($now);
+        $jam = $now->format('H:i:s');
 
-        if (date('l') == 'Saturday' || date('l') == 'Sunday') {
+        if (\Carbon\Carbon::parse($tanggal)->isWeekend()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Hari libur, tidak bisa check-in',
             ], 400);
+        }
+
+        if (!AttendanceShift::canCheckIn($now)) {
+            return response()->json(['success' => false, 'message' => 'Check-in belum tersedia untuk shift ini'], 400);
         }
 
         // Validasi jarak lokasi
@@ -88,13 +95,7 @@ class ApiPresentController extends Controller
             ], 400);
         }
 
-        if (strtotime($jam) >= strtotime(config('absensi.jam_masuk') . ' -1 hours') && strtotime($jam) <= strtotime(config('absensi.jam_masuk'))) {
-            $keterangan = 'Masuk';
-        } elseif (strtotime($jam) > strtotime(config('absensi.jam_masuk')) && strtotime($jam) <= strtotime(config('absensi.jam_pulang'))) {
-            $keterangan = 'Telat';
-        } else {
-            $keterangan = 'Alpha';
-        }
+        $keterangan = AttendanceShift::description($now);
 
         $data = [
             'user_id'    => $userId,
@@ -144,22 +145,30 @@ class ApiPresentController extends Controller
     // Cek status check-in/check-out hari ini
     public function statusHariIni(Request $request)
     {
+        if (auth()->user()->hasRole('Manager')) {
+            return response()->json([
+                'success' => true, 'wajib_absen' => false,
+                'sudah_checkin' => false, 'sudah_checkout' => false,
+                'bisa_checkin' => false, 'bisa_checkout' => false,
+                'jam_masuk_config' => config('absensi.jam_masuk'),
+                'jam_pulang_config' => config('absensi.jam_pulang'),
+            ]);
+        }
         $userId  = auth()->user()->id;
-        $tanggal = date('Y-m-d');
+        $now = now();
+        $tanggal = AttendanceShift::date($now);
 
         $present = Present::whereUserId($userId)->whereTanggal($tanggal)->first();
 
-        $jamSekarang  = date('H:i:s');
         $jamMasuk     = config('absensi.jam_masuk');
         $jamPulang    = config('absensi.jam_pulang');
 
         // Check-in aktif: 1 jam sebelum jam masuk sampai jam pulang
-        $jamMulaiCheckin = date('H:i:s', strtotime($jamMasuk . ' -1 hours'));
-        $bisaCheckin  = strtotime($jamSekarang) >= strtotime($jamMulaiCheckin)
-            && strtotime($jamSekarang) <= strtotime($jamPulang);
+        $bisaCheckin = AttendanceShift::canCheckIn($now);
 
         // Check-out aktif: setelah jam pulang
-        $bisaCheckout = strtotime($jamSekarang) >= strtotime($jamPulang);
+        $bisaCheckout = $present && $present->jam_masuk && !$present->jam_keluar
+            && AttendanceShift::canCheckOut($now, $present->tanggal);
 
         if (!$present || $present->keterangan == 'Alpha') {
             return response()->json([
@@ -191,12 +200,13 @@ class ApiPresentController extends Controller
     // Check-out
     public function checkOut(Request $request, $id)
     {
+        abort_if(auth()->user()->hasRole('Manager'), 403, 'Manager tidak perlu melakukan absensi.');
         $request->validate([
             'latitude'  => 'required|numeric',
             'longitude' => 'required|numeric',
         ]);
 
-        $present = Present::findOrFail($id);
+        $present = Present::whereUserId(auth()->id())->findOrFail($id);
 
         if ($present->jam_keluar) {
             return response()->json([
@@ -205,10 +215,11 @@ class ApiPresentController extends Controller
             ], 400);
         }
 
-        $jamSekarang = date('H:i:s');
+        $now = now();
+        $jamSekarang = $now->format('H:i:s');
         $jamPulang   = config('absensi.jam_pulang');
 
-        if (strtotime($jamSekarang) < strtotime($jamPulang)) {
+        if (!AttendanceShift::canCheckOut($now, $present->tanggal)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Check-out hanya bisa dilakukan setelah jam ' . substr($jamPulang, 0, 5),

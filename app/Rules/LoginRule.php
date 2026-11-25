@@ -29,6 +29,7 @@ class LoginRule implements Rule
         if (!auth()->attempt(['nrp' => $value, 'password' => $this->pass])) {
             return false;
         }
+        return true;
     }
 
     /**

@@ -100,7 +100,7 @@ class UsersController extends Controller
         $kehadiran = Present::whereUserId($user->id)->whereMonth('tanggal', date('m'))->whereYear('tanggal', date('Y'))->whereKeterangan('telat')->get();
         $totalJamTelat = 0;
         foreach ($kehadiran as $present) {
-            $totalJamTelat = $totalJamTelat + (\Carbon\Carbon::parse($present->jam_masuk)->diffInHours(\Carbon\Carbon::parse(config('absensi.jam_masuk'))));
+            $totalJamTelat += \App\Support\AttendanceShift::lateHours($present->tanggal, $present->jam_masuk);
         }
         $url = 'https://kalenderindonesia.com/api/' . config('absensi.api_key') . '/libur/masehi/' . date('Y/m');
         $kalender = @file_get_contents($url);

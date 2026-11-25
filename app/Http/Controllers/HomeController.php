@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Present;
+use App\Support\AttendanceShift;
 use Illuminate\Http\Request;
 
 class HomeController extends Controller
@@ -24,23 +25,24 @@ class HomeController extends Controller
      */
     public function index()
     {
-        $present = Present::whereUserId(auth()->user()->id)->whereTanggal(date('Y-m-d'))->first();
-        $url = 'https://kalenderindonesia.com/api/' . config('absensi.api_key') . '/libur/masehi/' . date('Y/m');
+        if (auth()->user()->hasRole('Manager')) {
+            return redirect()->route('manager.rekap');
+        }
+        $shiftDate = AttendanceShift::date(now());
+        $bisaCheckin = AttendanceShift::canCheckIn(now());
+        $present = Present::whereUserId(auth()->user()->id)->whereTanggal($shiftDate)->first();
+        $bisaCheckout = $present && AttendanceShift::canCheckOut(now(), $present->tanggal);
+        $url = 'https://kalenderindonesia.com/api/' . config('absensi.api_key') . '/libur/masehi/' . date('Y/m', strtotime($shiftDate));
         $response = @file_get_contents($url);
         $kalender = json_decode($response, true);
 
-        if (is_array($kalender) && isset($kalender['data'])) {
-            // lanjut logika kamu
-        } else {
-            // fallback kalau gagal
-            $libur = false;
-            $holiday = null;
-        }
+        $libur = false;
+        $holiday = null;
 
-        if ($kalender['data'] != false) {
+        if (is_array($kalender) && !empty($kalender['data'])) {
             if ($kalender['data']['holidays']) {
                 foreach ($kalender['data']['holidays'] as $key => $value) {
-                    if ($value['masehi'] == date('Y-m-d')) {
+                    if ($value['masehi'] == $shiftDate) {
                         $holiday = $value['holiday']['name'];
                         $libur = true;
                         break;
@@ -48,6 +50,6 @@ class HomeController extends Controller
                 }
             }
         }
-        return view('home', compact('present', 'libur', 'holiday'));
+        return view('home', compact('present', 'libur', 'holiday', 'shiftDate', 'bisaCheckin', 'bisaCheckout'));
     }
 }

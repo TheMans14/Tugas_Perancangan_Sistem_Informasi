@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'perjalanan_dinas_screen.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:geolocator/geolocator.dart';
@@ -524,6 +525,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           context,
                           MaterialPageRoute(
                               builder: (_) => const RiwayatCutiScreen()))),
+                  _menuCard(Icons.business_center_outlined, 'Perjalanan Dinas',
+                      const Color(0xFF16A085),
+                      onTap: () => Navigator.push(context, MaterialPageRoute(
+                          builder: (_) => const PerjalananDinasScreen()))),
                   _menuCard(Icons.person_outline, 'Profil',
                       const Color(0xFF3498DB),
                       onTap: () => Navigator.push(

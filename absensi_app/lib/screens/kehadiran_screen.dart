@@ -124,7 +124,7 @@ class _KehadiranScreenState extends State<KehadiranScreen> {
                       physics: const NeverScrollableScrollPhysics(),
                       crossAxisSpacing: 12,
                       mainAxisSpacing: 12,
-                      childAspectRatio: 2.5,
+                      childAspectRatio: 1.9,
                       children: [
                         _statCard('Masuk',  '${_statistik['masuk']}',  const Color(0xFF2ECC71)),
                         _statCard('Telat',  '${_statistik['telat']}',  const Color(0xFFF39C12)),
@@ -217,34 +217,39 @@ class _KehadiranScreenState extends State<KehadiranScreen> {
 
   Widget _statCard(String label, String value, Color color) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey.shade200),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
-            width: 10,
-            height: 40,
+            width: 8,
+            height: 36,
             decoration: BoxDecoration(
               color: color,
               borderRadius: BorderRadius.circular(4),
             ),
           ),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(label,
-                  style: TextStyle(
-                      fontSize: 12, color: Colors.grey.shade600)),
-              Text(value,
-                  style: const TextStyle(
-                      fontSize: 22, fontWeight: FontWeight.bold)),
-            ],
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label,
+                    style: TextStyle(
+                        fontSize: 12, color: Colors.grey.shade600)),
+                const SizedBox(height: 2),
+                Text(value,
+                    style: const TextStyle(
+                        fontSize: 20, fontWeight: FontWeight.bold),
+                    overflow: TextOverflow.ellipsis),
+              ],
+            ),
           ),
         ],
       ),

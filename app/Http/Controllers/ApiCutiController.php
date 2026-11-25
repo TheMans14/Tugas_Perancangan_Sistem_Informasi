@@ -33,6 +33,7 @@ class ApiCutiController extends Controller
     // Ajukan cuti baru
     public function store(Request $request)
     {
+        abort_if(auth()->user()->hasRole('Manager'), 403, 'Manager tidak mengajukan cuti.');
         $request->validate([
             'tanggal_mulai'   => ['required', 'date', 'after_or_equal:today'],
             'tanggal_selesai' => ['required', 'date', 'after_or_equal:tanggal_mulai'],

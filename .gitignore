@@ -5,6 +5,13 @@
 /vendor
 .env
 .env.backup
+.env.*
+!.env.example
+**/*firebase-credentials*.json
+**/*service-account*.json
+**/*serviceAccountKey*.json
+**/*.jks
+**/*.keystore
 .phpunit.result.cache
 Homestead.json
 Homestead.yaml

@@ -17,7 +17,7 @@ class CheckRole
     {
         $roles = $this->cekRoute($request->route());
 
-        if ($request->user()->hasRole($roles) || !$roles) {
+        if (!$roles || $request->user()->hasRole($roles)) {
             return $next($request);
         }
         return abort(403, 'Access Forbidden');

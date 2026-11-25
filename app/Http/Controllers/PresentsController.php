@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Present;
+use App\Support\AttendanceShift;
 use App\User;
 use App\Exports\PresentExport;
 use App\Exports\UsersPresentExport;
@@ -18,16 +19,17 @@ class PresentsController extends Controller
      */
     public function index()
     {
+        $tanggal = AttendanceShift::date(now());
         $presents = Present::with('user') // ⬅️ Tambahkan eager loading
-            ->whereTanggal(date('Y-m-d'))
+            ->whereTanggal($tanggal)
             ->orderBy('jam_masuk', 'desc')
             ->paginate(6);
 
-        $masuk = Present::whereTanggal(date('Y-m-d'))->whereKeterangan('masuk')->count();
-        $telat = Present::whereTanggal(date('Y-m-d'))->whereKeterangan('telat')->count();
-        $cuti = Present::whereTanggal(date('Y-m-d'))->whereKeterangan('cuti')->count();
-        $izin = Present::whereTanggal(date('Y-m-d'))->whereKeterangan('cuti')->count();
-        $alpha = Present::whereTanggal(date('Y-m-d'))->whereKeterangan('alpha')->count();
+        $masuk = Present::whereTanggal($tanggal)->whereKeterangan('masuk')->count();
+        $telat = Present::whereTanggal($tanggal)->whereKeterangan('telat')->count();
+        $cuti = Present::whereTanggal($tanggal)->whereKeterangan('cuti')->count();
+        $izin = Present::whereTanggal($tanggal)->whereKeterangan('cuti')->count();
+        $alpha = Present::whereTanggal($tanggal)->whereKeterangan('alpha')->count();
         $rank = $presents->firstItem();
 
         return view('presents.index', compact('presents', 'rank', 'masuk', 'telat', 'cuti', 'izin', 'alpha'));
@@ -63,7 +65,7 @@ class PresentsController extends Controller
         $kehadiran = Present::whereUserId($user->id)->whereMonth('tanggal', $data[1])->whereYear('tanggal', $data[0])->whereKeterangan('telat')->get();
         $totalJamTelat = 0;
         foreach ($kehadiran as $present) {
-            $totalJamTelat = $totalJamTelat + (\Carbon\Carbon::parse($present->jam_masuk)->diffInHours(\Carbon\Carbon::parse(config('absensi.jam_masuk') . ' -1 hours')));
+            $totalJamTelat += AttendanceShift::lateHours($present->tanggal, $present->jam_masuk);
         }
         $url = 'https://kalenderindonesia.com/api/YZ35u6a7sFWN/libur/masehi/' . date('Y/m');
         $kalender = file_get_contents($url);
@@ -100,13 +102,20 @@ class PresentsController extends Controller
 
     public function checkIn(Request $request)
     {
-        $users = User::all();
-        $data['jam_masuk']  = date('H:i:s');
-        $data['tanggal']    = date('Y-m-d');
-        $data['user_id']    = $request->user_id;
+        $users = User::whereHas('role', function ($query) {
+            $query->whereIn('role', ['Admin', 'Pegawai']);
+        })->get();
+        $now = now();
+        $data['jam_masuk']  = $now->format('H:i:s');
+        $data['tanggal']    = AttendanceShift::date($now);
+        $data['user_id']    = auth()->id();
 
-        if (date('l') == 'Saturday' || date('l') == 'Sunday') {
+        if (\Carbon\Carbon::parse($data['tanggal'])->isWeekend()) {
             return redirect()->back()->with('error', 'Hari Libur Tidak bisa Check In');
+        }
+
+        if (!AttendanceShift::canCheckIn($now)) {
+            return redirect()->back()->with('error', 'Check-in belum tersedia untuk shift ini');
         }
 
         foreach ($users as $user) {
@@ -115,20 +124,14 @@ class PresentsController extends Controller
                 if ($user->id != $data['user_id']) {
                     Present::create([
                         'keterangan'    => 'Alpha',
-                        'tanggal'       => date('Y-m-d'),
+                        'tanggal'       => $data['tanggal'],
                         'user_id'       => $user->id
                     ]);
                 }
             }
         }
 
-        if (strtotime($data['jam_masuk']) >= strtotime(config('absensi.jam_masuk') . ' -1 hours') && strtotime($data['jam_masuk']) <= strtotime(config('absensi.jam_masuk'))) {
-            $data['keterangan'] = 'Masuk';
-        } else if (strtotime($data['jam_masuk']) > strtotime(config('absensi.jam_masuk')) && strtotime($data['jam_masuk']) <= strtotime(config('absensi.jam_pulang'))) {
-            $data['keterangan'] = 'Telat';
-        } else {
-            $data['keterangan'] = 'Alpha';
-        }
+        $data['keterangan'] = AttendanceShift::description($now);
 
         $present = Present::whereUserId($data['user_id'])->whereTanggal($data['tanggal'])->first();
         if ($present) {
@@ -146,11 +149,16 @@ class PresentsController extends Controller
 
     public function checkOut(Request $request, Present $kehadiran)
     {
+        abort_unless($kehadiran->user_id == auth()->id(), 403);
+        if (!AttendanceShift::canCheckOut(now(), $kehadiran->tanggal)) {
+            return redirect()->back()->with('error', 'Check-out hanya bisa dilakukan setelah jam ' . substr(config('absensi.jam_pulang'), 0, 5));
+        }
+
         if ($kehadiran->jam_keluar) {
             return redirect()->back()->with('error', 'Anda sudah melakukan absen pulang.');
         }
 
-        $kehadiran->jam_keluar = now();
+        $kehadiran->jam_keluar = now()->format('H:i:s');
         $kehadiran->save();
 
         return redirect()->back()->with('success', 'Absen pulang berhasil.');
@@ -166,7 +174,9 @@ class PresentsController extends Controller
      */
     public function store(Request $request)
     {
-        $present = Present::whereUserId($request->user_id)->whereTanggal(date('Y-m-d'))->first();
+        abort_if(User::findOrFail($request->user_id)->hasRole('Manager'), 403, 'Manager tidak perlu melakukan absensi.');
+        $tanggal = AttendanceShift::date(now());
+        $present = Present::whereUserId($request->user_id)->whereTanggal($tanggal)->first();
         if ($present) {
             return redirect()->back()->with('error', 'Absensi hari ini telah terisi');
         }
@@ -174,16 +184,10 @@ class PresentsController extends Controller
             'keterangan'    => ['required'],
             'user_id'    => ['required']
         ]);
-        $data['tanggal'] = date('Y-m-d');
+        $data['tanggal'] = $tanggal;
         if ($request->keterangan == 'Masuk' || $request->keterangan == 'Telat') {
             $data['jam_masuk'] = $request->jam_masuk;
-            if (strtotime($data['jam_masuk']) >= strtotime(config('absensi.jam_masuk') . ' -1 hours') && strtotime($data['jam_masuk']) <= strtotime(config('absensi.jam_masuk'))) {
-                $data['keterangan'] = 'Masuk';
-            } else if (strtotime($data['jam_masuk']) > strtotime(config('absensi.jam_masuk')) && strtotime($data['jam_masuk']) <= strtotime(config('absensi.jam_pulang'))) {
-                $data['keterangan'] = 'Telat';
-            } else {
-                $data['keterangan'] = 'Alpha';
-            }
+            $data['keterangan'] = AttendanceShift::descriptionForTime($data['tanggal'], $data['jam_masuk']);
         }
         Present::create($data);
         return redirect()->back()->with('success', 'Kehadiran berhasil ditambahkan');
@@ -219,6 +223,7 @@ class PresentsController extends Controller
      */
     public function update(Request $request, Present $kehadiran)
     {
+        abort_if($kehadiran->user->hasRole('Manager'), 403, 'Manager tidak perlu melakukan absensi.');
         $data = $request->validate([
             'keterangan'    => ['required']
         ]);
@@ -229,13 +234,7 @@ class PresentsController extends Controller
 
         if ($request->keterangan == 'Masuk' || $request->keterangan == 'Telat') {
             $data['jam_masuk'] = $request->jam_masuk;
-            if (strtotime($data['jam_masuk']) >= strtotime(config('absensi.jam_masuk') . ' -1 hours') && strtotime($data['jam_masuk']) <= strtotime(config('absensi.jam_masuk'))) {
-                $data['keterangan'] = 'Masuk';
-            } else if (strtotime($data['jam_masuk']) > strtotime(config('absensi.jam_masuk')) && strtotime($data['jam_masuk']) <= strtotime(config('absensi.jam_pulang'))) {
-                $data['keterangan'] = 'Telat';
-            } else {
-                $data['keterangan'] = 'Alpha';
-            }
+            $data['keterangan'] = AttendanceShift::descriptionForTime($kehadiran->tanggal, $data['jam_masuk']);
         } else {
             $data['jam_masuk'] = null;
             $data['jam_keluar'] = null;

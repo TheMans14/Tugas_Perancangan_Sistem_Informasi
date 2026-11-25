@@ -102,6 +102,11 @@
                 </div>
                 <!-- Navigation -->
                 <ul class="navbar-nav">
+                    @if (auth()->user()->hasRole('Manager'))
+                    <li class="nav-item"><a class="nav-link" href="{{ route('manager.rekap') }}"><i class="ni ni-check-bold text-primary"></i> Rekap Absensi</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ route('admin.cuti.index') }}"><i class="ni ni-calendar-grid-58 text-danger"></i> Pengajuan Cuti</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ route('manager.perjalanan-dinas.index') }}"><i class="ni ni-world text-info"></i> Perjalanan Dinas</a></li>
+                    @else
                     @if (auth()->user()->role->role == "Admin")
                     @if (Request::segment(1) == 'kehadiran')
                     <li class="nav-item active">
@@ -113,13 +118,6 @@
                             <i class="ni ni-check-bold text-primary"></i> Kehadiran
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ route('admin.cuti.index') }}">
-                            <i class="ni ni-calendar-grid-58 text-danger"></i> Pengajuan Cuti
-                        </a>
-
-
-
                         @if (Request::segment(1) == 'users')
                     <li class="nav-item active">
                         <a class="nav-link active" href="{{ route('users.index') }}">
@@ -156,6 +154,7 @@
                     </li>
                     
                     {{-- === AJUKAN CUTI === --}}
+                    <li class="nav-item"><a class="nav-link" href="{{ route('perjalanan-dinas.index') }}"><i class="ni ni-world text-info"></i> Perjalanan Dinas</a></li>
                     @if (Request::segment(1) == 'cuti')
                     <li class="nav-item active">
                         <a class="nav-link active" href="{{ route('cuti.create') }}">
@@ -173,6 +172,7 @@
                     </li>
 
 
+                    @endif
                     @if (Request::segment(1) == 'profil')
                     <li class="nav-item active">
                         <a class="nav-link active" href="{{ route('profil') }}">

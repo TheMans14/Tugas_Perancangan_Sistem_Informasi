@@ -2,8 +2,8 @@
 
 namespace App\Http\Middleware;
 
-use App;
 use Closure;
+use Illuminate\Support\Str;
 
 class IpMiddleware
 {
@@ -16,10 +16,19 @@ class IpMiddleware
      */
     public function handle($request, Closure $next, ...$ips)
     {
-        $access = array_filter(array_map(function($v){
-            return ( $star = strpos($v, "*") ) ? ( substr(request()->ip(), 0, $star) == substr($v, 0, $star) )
-                                               : ( request()->ip() == $v );
-        }, $ips));
-        return $access ? $next($request) : abort(403);
+        $ip = $request->ip();
+
+        // The local web dashboard can reach this development server via loopback.
+        if (app()->environment('local') && in_array($ip, ['127.0.0.1', '::1'], true)) {
+            return $next($request);
+        }
+
+        foreach ($ips as $allowedIp) {
+            if (Str::is($allowedIp, $ip)) {
+                return $next($request);
+            }
+        }
+
+        abort(403);
     }
 }

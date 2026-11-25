@@ -15,6 +15,8 @@ Route::post('/login', 'AuthController@apiLogin');
 
 // Route yang butuh token
 Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/perjalanan-dinas', 'PerjalananDinasController@index');
+    Route::post('/perjalanan-dinas', 'PerjalananDinasController@store');
     Route::post('/logout', 'AuthController@apiLogout');
     Route::get('/me',     'AuthController@apiMe');
 

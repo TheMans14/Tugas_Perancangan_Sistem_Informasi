@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\User;
+use App\Support\AttendanceShift;
 use Illuminate\Console\Command;
 use Kreait\Firebase\Messaging;
 use Kreait\Firebase\Messaging\CloudMessage;
@@ -17,10 +18,15 @@ class SendAttendanceReminder extends Command
     public function handle(Messaging $messaging)
     {
         $type    = $this->argument('type');
-        $tanggal = date('Y-m-d');
+        $tanggal = AttendanceShift::date(now());
+
+        if (\Carbon\Carbon::parse($tanggal)->isWeekend()) {
+            return;
+        }
 
         if ($type === 'masuk') {
             $userIds = User::whereNotNull('fcm_token')
+                ->whereHas('role', function ($q) { $q->whereIn('role', ['Admin', 'Pegawai']); })
                 ->whereDoesntHave('presents', function ($q) use ($tanggal) {
                     $q->whereDate('tanggal', $tanggal)->whereNotNull('jam_masuk');
                 })
@@ -30,6 +36,7 @@ class SendAttendanceReminder extends Command
             $pesan = 'Jam masuk 1 jam lagi, jangan lupa check-in!';
         } else {
             $userIds = User::whereNotNull('fcm_token')
+                ->whereHas('role', function ($q) { $q->whereIn('role', ['Admin', 'Pegawai']); })
                 ->whereHas('presents', function ($q) use ($tanggal) {
                     $q->whereDate('tanggal', $tanggal)
                       ->whereNotNull('jam_masuk')

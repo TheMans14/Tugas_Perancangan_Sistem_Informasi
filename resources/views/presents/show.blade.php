@@ -133,9 +133,7 @@ Detail User - {{ config('app.name') }}
                             <td>
                                 @if ($present->jam_masuk && $present->jam_keluar)
                                 @php
-                                $masuk = \Carbon\Carbon::parse($present->jam_masuk);
-                                $keluar = \Carbon\Carbon::parse($present->jam_keluar);
-                                $total = $masuk->diffInMinutes($keluar);
+                                $total = \App\Support\AttendanceShift::workedMinutes($present->jam_masuk, $present->jam_keluar);
                                 $jam = floor($total / 60);
                                 $menit = $total % 60;
                                 @endphp

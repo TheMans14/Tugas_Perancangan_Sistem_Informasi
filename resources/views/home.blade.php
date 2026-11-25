@@ -3,12 +3,12 @@
 Home - {{ config('app.name') }}
 @endsection
 @section('content')
-@if ($libur ?? false)
+@if (($libur ?? false) && (!$present || !$present->jam_masuk))
 <div class="text-center">
     <p>Absen Libur (Hari Libur Nasional {{ $holiday }})</p>
 </div>
 @else
-@if (date('l') == "Saturday" || date('l') == "Sunday")
+@if (\Carbon\Carbon::parse($shiftDate)->isWeekend() && (!$present || !$present->jam_masuk))
 <div class="text-center">
     <p>Absen Libur</p>
 </div>
@@ -16,7 +16,7 @@ Home - {{ config('app.name') }}
 @if ($present)
 @if ($present->keterangan == 'Alpha')
 <div class="text-center">
-    @if (strtotime(date('H:i:s')) >= strtotime(config('absensi.jam_masuk') .' -1 hours') && strtotime(date('H:i:s')) <= strtotime(config('absensi.jam_pulang')))
+    @if ($bisaCheckin)
         <p>Silahkan Check-in</p>
         <form action="{{ route('kehadiran.check-in') }}" method="post">
             @csrf
@@ -46,7 +46,7 @@ Home - {{ config('app.name') }}
     @if ($present->jam_keluar)
     <p>Check-out hari ini pukul : ({{ $present->jam_keluar }})</p>
     @else
-    @if (strtotime('now') >= strtotime(config('absensi.jam_pulang')))
+    @if ($bisaCheckout)
     <p>Jika pekerjaan telah selesai silahkan check-out</p>
     <form action="{{ route('kehadiran.check-out', $present->id) }}" method="POST">
         @csrf
@@ -64,7 +64,7 @@ Home - {{ config('app.name') }}
 @endif
 @else
 <div class="text-center">
-    @if (strtotime(date('H:i:s')) >= strtotime(config('absensi.jam_masuk') . ' -1 hours') && strtotime(date('H:i:s')) <= strtotime(config('absensi.jam_pulang')))
+    @if ($bisaCheckin)
         <p>Silahkan Check-in</p>
         <form action="{{ route('kehadiran.check-in') }}" method="post">
             @csrf

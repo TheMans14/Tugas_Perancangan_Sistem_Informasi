@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="container mt-5">
-    <h3>Daftar Pengajuan Cuti</h3>
+    <h3>Pengajuan Cuti User dan Admin</h3>
 
     @if (session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>
@@ -12,6 +12,7 @@
         <thead>
             <tr>
                 <th>User</th>
+                <th>Role</th>
                 <th>Tanggal Mulai</th>
                 <th>Tanggal Selesai</th>
                 <th>Alasan</th>
@@ -23,6 +24,7 @@
             @foreach ($cutis as $cuti)
             <tr>
                 <td>{{ $cuti->user->nama ?? '-' }}</td>
+                <td>{{ $cuti->user->role->role ?? '-' }}</td>
                 <td>{{ $cuti->tanggal_mulai }}</td>
                 <td>{{ $cuti->tanggal_selesai }}</td>
                 <td>{{ $cuti->alasan }}</td>
